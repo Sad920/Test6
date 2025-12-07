@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matrix Multiplication</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px auto;
+      max-width: 960px;
+      line-height: 1.6;
+      color: #1f2933;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    fieldset {
+      border: 1px solid #cfd8dc;
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    legend {
+      padding: 0 8px;
+      font-weight: bold;
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 12px;
+      margin-bottom: 8px;
+    }
+
+    input[type="number"] {
+      width: 70px;
+      padding: 6px 8px;
+      border: 1px solid #cfd8dc;
+      border-radius: 4px;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 8px 16px;
+      background: #1565c0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #0d47a1;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    td {
+      border: 1px solid #cfd8dc;
+      padding: 6px;
+    }
+
+    .error {
+      color: #c62828;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .result-table td {
+      min-width: 60px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Matrix Multiplication</h1>
+  <p>
+    Enter the dimensions for two matrices, fill in their values, and click
+    <strong>Multiply</strong> to see the resulting matrix.
+  </p>
+
+  <div class="grid">
+    <fieldset>
+      <legend>Matrix A</legend>
+      <div>
+        <label>Rows <input type="number" id="a-rows" min="1" value="2" /></label>
+        <label>Columns <input type="number" id="a-cols" min="1" value="2" /></label>
+        <button id="build-a">Build Matrix A</button>
+      </div>
+      <div id="matrix-a" aria-live="polite"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Matrix B</legend>
+      <div>
+        <label>Rows <input type="number" id="b-rows" min="1" value="2" /></label>
+        <label>Columns <input type="number" id="b-cols" min="1" value="2" /></label>
+        <button id="build-b">Build Matrix B</button>
+      </div>
+      <div id="matrix-b" aria-live="polite"></div>
+    </fieldset>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <button id="multiply">Multiply</button>
+    <div id="message" class="error" aria-live="polite"></div>
+  </div>
+
+  <div id="result" style="margin-top: 24px;"></div>
+
+  <script>
+    const matrixAContainer = document.getElementById("matrix-a");
+    const matrixBContainer = document.getElementById("matrix-b");
+    const messageBox = document.getElementById("message");
+    const resultBox = document.getElementById("result");
+
+    const buildMatrix = (container, rowsInputId, colsInputId, prefix) => {
+      const rows = parseInt(document.getElementById(rowsInputId).value, 10);
+      const cols = parseInt(document.getElementById(colsInputId).value, 10);
+      if (Number.isNaN(rows) || Number.isNaN(cols) || rows < 1 || cols < 1) {
+        container.innerHTML = "";
+        return;
+      }
+
+      const table = document.createElement("table");
+      for (let r = 0; r < rows; r++) {
+        const tr = document.createElement("tr");
+        for (let c = 0; c < cols; c++) {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "number";
+          input.value = "0";
+          input.step = "any";
+          input.id = `${prefix}-${r}-${c}`;
+          td.appendChild(input);
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+
+      container.innerHTML = "";
+      container.appendChild(table);
+    };
+
+    const readMatrix = (container, prefix) => {
+      const table = container.querySelector("table");
+      if (!table) return null;
+      const rows = table.rows.length;
+      const cols = rows > 0 ? table.rows[0].cells.length : 0;
+      const matrix = [];
+      for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) {
+          const input = document.getElementById(`${prefix}-${r}-${c}`);
+          const value = parseFloat(input.value);
+          if (Number.isNaN(value)) return null;
+          row.push(value);
+        }
+        matrix.push(row);
+      }
+      return matrix;
+    };
+
+    const multiplyMatrices = (a, b) => {
+      const result = Array.from({ length: a.length }, () =>
+        Array.from({ length: b[0].length }, () => 0)
+      );
+
+      for (let i = 0; i < a.length; i++) {
+        for (let k = 0; k < b.length; k++) {
+          for (let j = 0; j < b[0].length; j++) {
+            result[i][j] += a[i][k] * b[k][j];
+          }
+        }
+      }
+      return result;
+    };
+
+    const renderResult = (matrix) => {
+      const table = document.createElement("table");
+      table.className = "result-table";
+      matrix.forEach((row) => {
+        const tr = document.createElement("tr");
+        row.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = Number.isInteger(value) ? value : value.toFixed(2);
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      resultBox.innerHTML = "";
+      resultBox.appendChild(table);
+    };
+
+    document.getElementById("build-a").addEventListener("click", () => {
+      buildMatrix(matrixAContainer, "a-rows", "a-cols", "a-cell");
+      messageBox.textContent = "";
+      resultBox.innerHTML = "";
+    });
+
+    document.getElementById("build-b").addEventListener("click", () => {
+      buildMatrix(matrixBContainer, "b-rows", "b-cols", "b-cell");
+      messageBox.textContent = "";
+      resultBox.innerHTML = "";
+    });
+
+    document.getElementById("multiply").addEventListener("click", () => {
+      const matrixA = readMatrix(matrixAContainer, "a-cell");
+      const matrixB = readMatrix(matrixBContainer, "b-cell");
+
+      if (!matrixA || !matrixB) {
+        messageBox.textContent = "Please build both matrices and ensure all entries are valid numbers.";
+        resultBox.innerHTML = "";
+        return;
+      }
+
+      if (matrixA[0].length !== matrixB.length) {
+        messageBox.textContent = "Matrix A columns must match Matrix B rows.";
+        resultBox.innerHTML = "";
+        return;
+      }
+
+      messageBox.textContent = "";
+      const result = multiplyMatrices(matrixA, matrixB);
+      renderResult(result);
+    });
+
+    // Build default 2x2 matrices on page load
+    buildMatrix(matrixAContainer, "a-rows", "a-cols", "a-cell");
+    buildMatrix(matrixBContainer, "b-rows", "b-cols", "b-cell");
+  </script>
+</body>
+</html>
